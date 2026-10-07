@@ -52,6 +52,7 @@
   }
   .seg button[aria-pressed=true] { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 
+  #themes { display: grid; grid-template-columns: repeat(3, 1fr); }
   .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
   .swatches button {
     width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); padding: 0;
@@ -197,7 +198,7 @@ const DEFAULTS = {
   title: "나의 페어 정리표",
   subtitle: "",
   handle: "",
-  theme: "gallery",        // gallery | polaroid | night | soda
+  theme: "gallery",        // gallery | polaroid | night | soda | xmas
   cols: 3,                 // 한 줄에 들어가는 개수 (1~8)
   ratio: "1:1",            // 1:1 | 3:4 | 4:3
   sep: "×",
@@ -267,28 +268,81 @@ function wrap(ctx, text, maxW) {
 const tagsOf = (s) => (s || "").split(/[,#\n，、]+/).map((t) => t.trim()).filter(Boolean);
 
 /* ---------- 글꼴 ----------
-   구글 폰트에 있는 한글 글꼴. w 는 그 글꼴이 가진 굵기. 목록에 추가하면 선택지에 나옵니다. */
+   g: 선택 목록의 묶음, w: 그 글꼴이 가진 굵기.
+   src 가 없으면 구글 폰트, 있으면 눈누(noonnu.cc)에서 안내하는 웹폰트 주소에서 불러옵니다. */
+const NOONNU = "https://cdn.jsdelivr.net/gh/projectnoonnu/";
 const FONTS = [
-  { id: "Gowun Batang", label: "고운바탕", w: [400, 700], pre: 1 },
-  { id: "Nanum Myeongjo", label: "나눔명조", w: [400, 700, 800] },
-  { id: "Noto Serif KR", label: "노토 세리프", w: [400, 700] },
-  { id: "Hahmlet", label: "함렛", w: [400, 700] },
-  { id: "Song Myung", label: "송명", w: [400] },
-  { id: "Diphylleia", label: "디필레이아", w: [400] },
-  { id: "Pretendard", label: "프리텐다드", w: [400, 500, 600, 700], pre: 1 },
-  { id: "Noto Sans KR", label: "노토 산스", w: [400, 500, 700] },
-  { id: "IBM Plex Sans KR", label: "IBM 플렉스", w: [400, 500, 700] },
-  { id: "Nanum Gothic", label: "나눔고딕", w: [400, 700, 800] },
-  { id: "Gowun Dodum", label: "고운돋움", w: [400], pre: 1 },
-  { id: "Jua", label: "주아", w: [400], pre: 1 },
-  { id: "Do Hyeon", label: "도현", w: [400] },
-  { id: "Black Han Sans", label: "검은고딕", w: [400] },
-  { id: "Dongle", label: "동글", w: [400, 700] },
-  { id: "Nanum Pen Script", label: "나눔펜 (손글씨)", w: [400], pre: 1 },
-  { id: "Gaegu", label: "개구 (손글씨)", w: [400, 700] },
-  { id: "Gamja Flower", label: "감자꽃 (손글씨)", w: [400] },
-  { id: "Hi Melody", label: "하이멜로디 (손글씨)", w: [400] },
-  { id: "Single Day", label: "싱글데이 (손글씨)", w: [400] },
+  // 손글씨
+  { g: "손글씨", id: "Nanum Pen Script", label: "나눔펜", w: [400], pre: 1 },
+  { g: "손글씨", id: "PT Ownglyph ParkDaHyun", label: "온글잎 박다현체", w: [400], src: { 400: "2411-3@1.0/Ownglyph_ParkDaHyun.woff2" } },
+  { g: "손글씨", id: "PT Ownglyph Ryurue", label: "온글잎 류류체", w: [400], src: { 400: "2405-2@1.0/Ownglyph_ryurue-Rg.woff2" } },
+  { g: "손글씨", id: "PT Ownglyph Corncorn", label: "온글잎 콘콘체", w: [400], src: { 400: "2412-1@1.0/Ownglyph_corncorn-Rg.woff2" } },
+  { g: "손글씨", id: "PT Ownglyph SeaBreeze", label: "온글잎 바닷바람", w: [400], src: { 400: "2510-1@1.0/Ownglyph_the_sea_breeze-Rg.woff2" } },
+  { g: "손글씨", id: "PT Ownglyph Meetme", label: "온글잎 밑미", w: [400], src: { 400: "noonfonts_2402_1@1.0/Ownglyph_meetme-Rg.woff2" } },
+  { g: "손글씨", id: "PT Uiyeun", label: "온글잎 의연체", w: [400], src: { 400: "noonfonts_2105@1.1/Uiyeun.woff" } },
+  { g: "손글씨", id: "PT KyoboHand", label: "교보손글씨 2019", w: [400], src: { 400: "noonfonts_20-04@1.0/KyoboHand.woff" } },
+  { g: "손글씨", id: "PT KyoboHand2020", label: "교보손글씨 2020 박도연", w: [400], src: { 400: "noonfonts_2112@1.0/KyoboHandwriting2020A.woff" } },
+  { g: "손글씨", id: "PT LeeSeoyun", label: "이서윤체", w: [400], src: { 400: "noonfonts_2202-2@1.0/LeeSeoyun.woff" } },
+  { g: "손글씨", id: "PT omyu pretty", label: "오뮤 다예쁨체", w: [400], src: { 400: "noonfonts_2304-01@1.0/omyu_pretty.woff2" } },
+  { g: "손글씨", id: "PT GangwonEduSaeeum", label: "강원교육새음", w: [400], src: { 400: "noonfonts_2201-2@1.0/GangwonEduSaeeum_OTFMediumA.woff" } },
+  { g: "손글씨", id: "PT GangwonEduHyeonokT", label: "강원교육현옥샘", w: [400], src: { 400: "noonfonts_2201-2@1.0/GangwonEduHyeonokT_OTFMediumA.woff" } },
+  { g: "손글씨", id: "PT Cafe24Oneprettynight", label: "카페24 고운밤", w: [400], src: { 400: "noonfonts_twelve@1.1/Cafe24Oneprettynight.woff" } },
+  { g: "손글씨", id: "PT Cafe24Shiningstar", label: "카페24 빛나는별", w: [400], src: { 400: "noonfonts_twelve@1.1/Cafe24Shiningstar.woff" } },
+  { g: "손글씨", id: "PT Cafe24Simplehae", label: "카페24 심플해", w: [400], src: { 400: "noonfonts_twelve@1.1/Cafe24Simplehae.woff" } },
+  { g: "손글씨", id: "PT MapoFlowerIsland", label: "마포꽃섬", w: [400], src: { 400: "noonfonts_2001@1.1/MapoFlowerIslandA.woff" } },
+  { g: "손글씨", id: "PT MapoGoldenPier", label: "마포금빛나루", w: [400], src: { 400: "noonfonts_2001@1.1/MapoGoldenPierA.woff" } },
+  { g: "손글씨", id: "PT MapoBackpacking", label: "마포배낭여행", w: [400], src: { 400: "noonfonts_2001@1.1/MapoBackpackingA.woff" } },
+  { g: "손글씨", id: "PT NanumBarunpen", label: "나눔바른펜", w: [400], src: { 400: "noonfonts_two@1.0/NanumBarunpen.woff" } },
+  { g: "손글씨", id: "PT KOTRA Songeulssi", label: "코트라 손글씨", w: [400], src: { 400: "noonfonts_20-10-21@1.0/KOTRA_SONGEULSSI.woff" } },
+  { g: "손글씨", id: "PT KOTRA Hope", label: "코트라 희망체", w: [400], src: { 400: "noonfonts_2110@1.0/KOTRAHOPE.woff2" } },
+  { g: "손글씨", id: "PT InkLipquid", label: "잉크립퀴드체", w: [400], src: { 400: "noonfonts_one@1.0/InkLipquid.woff" } },
+  { g: "손글씨", id: "PT Humanbumsuk", label: "휴먼범석체", w: [400], src: { 400: "noonfonts_2210-2@1.0/Humanbumsuk.woff2" } },
+  { g: "손글씨", id: "PT SF HambakSnow", label: "SF함박눈", w: [400], src: { 400: "noonfonts_2106@1.1/SF_HambakSnow.woff" } },
+  { g: "손글씨", id: "Gaegu", label: "개구", w: [400, 700] },
+  { g: "손글씨", id: "Gamja Flower", label: "감자꽃", w: [400] },
+  { g: "손글씨", id: "Hi Melody", label: "하이멜로디", w: [400] },
+  { g: "손글씨", id: "Single Day", label: "싱글데이", w: [400] },
+  // 명조
+  { g: "명조", id: "Gowun Batang", label: "고운바탕", w: [400, 700], pre: 1 },
+  { g: "명조", id: "PT RIDIBatang", label: "리디바탕", w: [400], src: { 400: "noonfonts_twelve@1.0/RIDIBatang.woff" } },
+  { g: "명조", id: "PT MaruBuri", label: "마루 부리", w: [400], src: { 400: "noonfonts_20-10-21@1.0/MaruBuri-Regular.woff" } },
+  { g: "명조", id: "PT YESMyoungjo", label: "예스 명조", w: [400], src: { 400: "noonfonts_13@1.0/YESMyoungjo-Regular.woff" } },
+  { g: "명조", id: "Nanum Myeongjo", label: "나눔명조", w: [400, 700, 800] },
+  { g: "명조", id: "Noto Serif KR", label: "노토 세리프", w: [400, 700] },
+  { g: "명조", id: "Hahmlet", label: "함렛", w: [400, 700] },
+  { g: "명조", id: "Song Myung", label: "송명", w: [400] },
+  { g: "명조", id: "Diphylleia", label: "디필레이아", w: [400] },
+  { g: "명조", id: "PT ChosunGs", label: "조선궁서체", w: [400], src: { 400: "noonfonts_20-04@1.0/ChosunGs.woff" } },
+  // 고딕 · 둥근 글씨
+  { g: "고딕 · 둥근 글씨", id: "Pretendard", label: "프리텐다드", w: [400, 500, 600, 700], pre: 1 },
+  { g: "고딕 · 둥근 글씨", id: "PT GmarketSans", label: "지마켓 산스", w: [300, 500, 700], src: { 300: "noonfonts_2001@1.1/GmarketSansLight.woff", 500: "noonfonts_2001@1.1/GmarketSansMedium.woff", 700: "noonfonts_2001@1.1/GmarketSansBold.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT SCoreDream", label: "에스코어 드림", w: [400, 700], src: { 400: "noonfonts_six@1.2/S-CoreDream-4Regular.woff", 700: "noonfonts_six@1.2/S-CoreDream-6Bold.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT NanumSquareNeo", label: "나눔스퀘어 네오", w: [400, 700], src: { "300 900": "noonfonts_11-01@1.0/NanumSquareNeo-Variable.woff2" } },
+  { g: "고딕 · 둥근 글씨", id: "PT SUIT", label: "수트", w: [400], src: { 400: "noonfonts_suit@1.0/SUIT-Regular.woff2" } },
+  { g: "고딕 · 둥근 글씨", id: "PT SUITE", label: "스위트", w: [400], src: { 400: "noonfonts_2304-2@1.0/SUITE-Regular.woff2" } },
+  { g: "고딕 · 둥근 글씨", id: "PT Cafe24Ssurround", label: "카페24 써라운드", w: [400], src: { 400: "noonfonts_2105_2@1.0/Cafe24Ssurround.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT Cafe24SsurroundAir", label: "카페24 써라운드 에어", w: [400], src: { 400: "noonfonts_2105_2@1.0/Cafe24SsurroundAir.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT GangwonEdu", label: "강원교육모두 Bold", w: [400], src: { 400: "noonfonts_2201-2@1.0/GangwonEdu_OTFBoldA.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT Dovemayo", label: "도브메이요 고딕", w: [400], src: { 400: "noonfonts_2302@1.1/Dovemayo_gothic.woff2" } },
+  { g: "고딕 · 둥근 글씨", id: "PT Maplestory", label: "메이플스토리", w: [300, 700], src: { 300: "noonfonts_20-04@2.1/MaplestoryOTFLight.woff", 700: "noonfonts_20-04@2.1/MaplestoryOTFBold.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT CookieRun", label: "쿠키런", w: [400], src: { 400: "noonfonts_2001@1.1/CookieRun-Regular.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT Binggrae", label: "빙그레체", w: [400], src: { 400: "noonfonts_one@1.0/Binggrae.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT BinggraeMelona", label: "빙그레 메로나", w: [400], src: { 400: "noonfonts_twelve@1.0/BinggraeMelona.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "PT BinggraeSamanco", label: "빙그레 싸만코 Bold", w: [400], src: { 400: "noonfonts_20-10@1.0/BinggraeSamanco-Bold.woff" } },
+  { g: "고딕 · 둥근 글씨", id: "Gowun Dodum", label: "고운돋움", w: [400], pre: 1 },
+  { g: "고딕 · 둥근 글씨", id: "Jua", label: "주아", w: [400], pre: 1 },
+  { g: "고딕 · 둥근 글씨", id: "Noto Sans KR", label: "노토 산스", w: [400, 500, 700] },
+  { g: "고딕 · 둥근 글씨", id: "IBM Plex Sans KR", label: "IBM 플렉스", w: [400, 500, 700] },
+  { g: "고딕 · 둥근 글씨", id: "Nanum Gothic", label: "나눔고딕", w: [400, 700, 800] },
+  { g: "고딕 · 둥근 글씨", id: "Dongle", label: "동글", w: [400, 700] },
+  // 제목용 · 픽셀
+  { g: "제목용 · 픽셀", id: "PT SBAggro", label: "어그로체 B", w: [400], src: { 400: "noonfonts_2108@1.1/SBAggroB.woff" } },
+  { g: "제목용 · 픽셀", id: "PT PyeongChangPeace", label: "평창평화체 Bold", w: [400], src: { 400: "noonfonts_2206-02@1.0/PyeongChangPeace-Bold.woff2" } },
+  { g: "제목용 · 픽셀", id: "PT establishRetrosans", label: "이스타블리시 레트로산스", w: [400], src: { 400: "noonfonts_2112@1.0/establishRetrosansOTF.woff" } },
+  { g: "제목용 · 픽셀", id: "Do Hyeon", label: "도현", w: [400] },
+  { g: "제목용 · 픽셀", id: "Black Han Sans", label: "검은고딕", w: [400] },
+  { g: "제목용 · 픽셀", id: "PT DungGeunMo", label: "둥근모꼴", w: [400], src: { 400: "noonfonts_six@1.2/DungGeunMo.woff" } },
+  { g: "제목용 · 픽셀", id: "PT NeoDunggeunmo", label: "네오둥근모", w: [400], src: { 400: "noonfonts_2001@1.3/NeoDunggeunmo.woff" } },
 ];
 const FB = ',-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
 const requested = new Set();
@@ -297,10 +351,16 @@ function face(spec, role) {           // 역할(title | name | body)에 지정�
   const w = def.w.reduce((a, b) => (Math.abs(b - spec.w) < Math.abs(a - spec.w) ? b : a));
   if (!def.pre && !requested.has(def.id)) {   // 처음 쓰는 글꼴은 그때 불러옴
     requested.add(def.id);
-    const l = document.createElement("link"); l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=" + def.id.replace(/ /g, "+") + (def.w.length > 1 ? ":wght@" + def.w.join(";") : "") + "&display=swap";
-    l.onload = () => { fontKey = ""; draw(); };
-    document.head.append(l);
+    const again = () => { fontKey = ""; draw(); };
+    if (def.src) {
+      for (const [weight, path] of Object.entries(def.src)) {
+        try { const ff = new FontFace(def.id, `url("${NOONNU}${path}")`, { weight }); document.fonts.add(ff); ff.load().then(again, () => {}); } catch (e) {}
+      }
+    } else {
+      const l = document.createElement("link"); l.rel = "stylesheet";
+      l.href = "https://fonts.googleapis.com/css2?family=" + def.id.replace(/ /g, "+") + (def.w.length > 1 ? ":wght@" + def.w.join(";") : "") + "&display=swap";
+      l.onload = again; document.head.append(l);
+    }
   }
   return { fam: def.id, w };
 }
@@ -479,6 +539,70 @@ const THEMES = {
       ctx.fillStyle = p.card; rrect(ctx, W / 2 - w / 2, y - 15, w, 30, 15); ctx.fill();
       ctx.fillStyle = p.accent; ctx.textAlign = "center"; ctx.fillText(t, W / 2, y + .5);
     },
+  },
+
+  xmas: {
+    slots: [["bg", "배경"], ["ink", "제목"], ["card", "카드"], ["cink", "카드 글자"], ["ribbon", "리본"], ["tagc", "키워드"], ["snow", "눈"]],
+    name: "크리스마스", align: "center", equalH: true,
+    pad: { x: 60, t: 64, b: 108 }, gap: { x: 34, y: 56 }, headGap: 66,
+    palettes: [
+      { name: "전나무", bg: "#465A4F", ink: "#F2ECDD", card: "#F4EEE1", cink: "#3B3F38", ribbon: "#A9584F", tagc: "#8E5048", snow: "#F7F4EC" },
+      { name: "버건디", bg: "#6F4144", ink: "#F3EADB", card: "#F5EEE2", cink: "#43302F", ribbon: "#BFA676", tagc: "#8A6B3C", snow: "#F8F3EA" },
+      { name: "크림", bg: "#E7DFCF", ink: "#4B5B4F", card: "#FBF8F1", cink: "#3F443D", ribbon: "#A9584F", tagc: "#6F8271", snow: "#FFFFFF" },
+      { name: "겨울밤", bg: "#48546B", ink: "#F1EDE2", card: "#F3EFE6", cink: "#343B49", ribbon: "#B9A27A", tagc: "#6E7C97", snow: "#F6F5F1" },
+      { name: "세이지", bg: "#A7B3A1", ink: "#2F3B33", card: "#FAF7F0", cink: "#353D36", ribbon: "#9A504B", tagc: "#6B7C66", snow: "#FFFFFF" },
+      { name: "코코아", bg: "#6C594E", ink: "#F3EADC", card: "#F4ECDF", cink: "#42362F", ribbon: "#9FAE95", tagc: "#73846A", snow: "#F7F1E7" },
+    ],
+    swatch: (p) => `linear-gradient(135deg, ${p.bg} 58%, ${p.ribbon} 58%)`,
+    ornament(ctx, W, y, p) {            // 호랑가시 잎과 열매
+      const cx = W / 2, cy = y + 16;
+      ctx.fillStyle = alpha(p.ink, .8);
+      for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.quadraticCurveTo(cx + d * 7, cy - 19, cx + d * 26, cy - 15); ctx.quadraticCurveTo(cx + d * 20, cy + 2, cx, cy); ctx.fill(); }
+      ctx.fillStyle = p.ribbon;
+      for (const [dx, dy] of [[-4.2, 2], [4.2, 2], [0, -4.5]]) { ctx.beginPath(); ctx.arc(cx + dx, cy + dy, 4, 0, 7); ctx.fill(); }
+      return 46;
+    },
+    title: { w: 700, fam: "Gowun Batang", size: 42, lh: 1.3, color: (p) => p.ink },
+    sub: { w: 400, fam: "Gowun Batang", size: 15, color: (p) => alpha(p.ink, .82), gap: 10 },
+    card: {
+      inset: 14, top: 28, frameB: 4, gapT: 12, padB: 20, emptyB: 12, tin: 16,
+      name: { w: 700, fam: "Gowun Batang", size: 19, lh: 26 }, chars: { w: 400, fam: "Gowun Dodum", size: 13, lh: 19, gap: 4 },
+      tag: { kind: "hash", w: 400, fam: "Gowun Dodum", size: 12, lh: 18, gap: 7, sp: 7 },
+    },
+    colors: (p) => ({ name: p.cink, chars: alpha(p.cink, .75), sep: p.ribbon, tag: p.tagc, ph: [mix(p.card, p.ribbon, .14), mix(p.card, p.ribbon, .26)] }),
+    bg(ctx, W, H, p, cards) {
+      const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, p.bg); g.addColorStop(1, mix(p.bg, "#000000", .16));
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      const top = cards.length ? cards[0].y : H, r = rng(11), n = Math.round(W * H / 3600);
+      for (let i = 0; i < n; i++) {     // 눈송이 (제목 뒤는 비워 둠)
+        const x = r() * W, y = r() * H, s = .8 + r() * r() * 2.6, a = .2 + r() * .6;
+        if (y < top - 14 && Math.abs(x - W / 2) < W * .34) continue;
+        ctx.fillStyle = alpha(p.snow, a); ctx.beginPath(); ctx.arc(x, y, s, 0, 7); ctx.fill();
+      }
+      const drift = (a, o) => {         // 바닥에 쌓인 눈
+        ctx.fillStyle = alpha(p.snow, a); ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, H - 30 - o);
+        ctx.bezierCurveTo(W * .22, H - 72 - o, W * .4, H - 14 - o, W * .6, H - 40 - o);
+        ctx.bezierCurveTo(W * .78, H - 64 - o, W * .9, H - 26 - o, W, H - 48 - o); ctx.lineTo(W, H); ctx.fill();
+      };
+      drift(.35, 14); drift(.95, 0);
+    },
+    frame(ctx, h, r, p, photo) {
+      shadow(ctx, "rgba(0,0,0,.22)", 22, 10); ctx.fillStyle = p.card; rrect(ctx, 0, 0, CW, h, 10); ctx.fill(); noShadow(ctx);
+      ctx.save(); rrect(ctx, r.x, r.y, r.w, r.h, 4); ctx.clip(); photo(); ctx.restore();
+      // 리본
+      const dark = mix(p.ribbon, "#000000", .18);
+      ctx.save(); ctx.translate(CW / 2, 4);
+      shadow(ctx, "rgba(0,0,0,.18)", 6, 2);
+      ctx.fillStyle = dark;
+      for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(d * -2, 2); ctx.lineTo(d * 15, 24); ctx.lineTo(d * 9, 21); ctx.lineTo(d * 5, 27); ctx.lineTo(d * 1, 4); ctx.fill(); }
+      ctx.fillStyle = p.ribbon;
+      for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(d * 9, -17, d * 31, -15, d * 29, 0); ctx.bezierCurveTo(d * 31, 13, d * 9, 11, 0, 0); ctx.fill(); }
+      noShadow(ctx);
+      ctx.fillStyle = dark; rrect(ctx, -5.5, -5.5, 11, 11, 3.5); ctx.fill();
+      ctx.restore();
+    },
+    hand: { w: 400, fam: "Gowun Dodum", size: 13.5 },
+    handle(ctx, W, y, p, t) { ctx.fillStyle = p.ink; ctx.textAlign = "center"; ctx.fillText(t, W / 2, y); },
   },
 };
 
@@ -799,7 +923,8 @@ function bind() {
 
   for (const role of ["title", "name", "body"]) {
     const sel = $("font-" + role);
-    sel.append(el("option", { value: "", text: "테마 기본" }), ...FONTS.map((x) => el("option", { value: x.id, text: x.label })));
+    sel.append(el("option", { value: "", text: "테마 기본" }));
+    for (const g of [...new Set(FONTS.map((x) => x.g))]) sel.append(el("optgroup", { label: g }, ...FONTS.filter((x) => x.g === g).map((x) => el("option", { value: x.id, text: x.label }))));
     sel.onchange = () => { state.font[role] = sel.value; fontKey = ""; draw(); };
   }
   for (const k of ["title", "name", "chars", "tag"]) $("size-" + k).oninput = (e) => { state.size[k] = parseFloat(e.target.value); $("size-" + k + "-out").textContent = Math.round(state.size[k] * 100) + "%"; draw(); };
