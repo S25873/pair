@@ -882,7 +882,10 @@ function render() {
       const sc = it.k === "chars" ? it.scale : 1;
       inkBottom = Math.max(inkBottom, rowY + L.textTop + it.y + inkDesc(font, text) * sc);
     }
-    H = Math.round(inkBottom + T.pad.x);
+    // 끝이 작은 회색 글씨(키워드·아이디)면 같은 숫자라도 아래가 더 비어 보여서, 눈대중으로 맞도록 아래 여백을 줄임
+    let endsWithText = !!handle;
+    if (!handle) for (const j of last.idx) if (Ls[j].items.length) endsWithText = true;
+    H = Math.round(inkBottom + (endsWithText ? Math.round(T.pad.x * .7) : T.pad.x));
   } else H = Math.round(T.pad.t + headH + (n ? gridH : 120) + footH + T.pad.b);
 
   // 너무 큰 이미지는 기기/트위터 한계에 맞춰 배율을 낮춤
